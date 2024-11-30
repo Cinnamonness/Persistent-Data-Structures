@@ -2,9 +2,9 @@ class FatNodeArray:
     """
     Реализация метода Fat Node для персистентных массивов.
     """
-    empty_array_message = "Массив пуст"
-    full_array_message = "Массив полон"
-    invalid_index_message = "Неверный индекс"
+    empty_array_message = 'Массив пуст'
+    full_array_message = 'Массив полон'
+    invalid_index_message = 'Неверный индекс'
 
     def __init__(self, max_size=None, depth=5, bits_for_level=4):
         """
@@ -95,8 +95,7 @@ class FatNodeArray:
         current_state = self._get_current_state()
         # Вставляем новый элемент с ссылкой на предыдущее состояние
         new_node = {'value': element, 'prev': current_state}
-        self.history.append(current_state[:index] +
-                            [new_node] + current_state[index:])
+        self.history.append(current_state[:index] + [new_node] + current_state[index:])
 
     def remove(self, index):
         """
@@ -106,8 +105,7 @@ class FatNodeArray:
         """
         self._check_index(index)
         current_state = self._get_current_state()
-        self.history.append(current_state[:index]
-                             + current_state[index + 1:])
+        self.history.append(current_state[:index] + current_state[index + 1:])
 
     def get(self, index):
         """
@@ -164,6 +162,8 @@ class FatNodeArray:
         :param value: Новый элемент.
         """
         current_state = self._get_current_state()
-        self.history.append(current_state[:index] +
-                            [{'value': value, 'prev': current_state}]
-                              + current_state[index + 1:])
+        self.history.append(
+            current_state[:index] + [
+                {'value': value, 'prev': current_state}
+            ] + current_state[index + 1:]
+        )

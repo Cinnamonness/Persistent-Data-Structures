@@ -135,7 +135,7 @@ obj[index]
 ```
 Обращение к элементу произвольной версии:
 ```python
-obj.get(index, version)
+obj.get(version, index)
 ```
 
 Добавление элемента в новую версию:
