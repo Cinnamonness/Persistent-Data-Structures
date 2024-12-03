@@ -48,7 +48,7 @@ class PersistentLinkedListFatNode:
         self.max_size = max_size or 2 ** 10
         self.head = None
         self.tail = None
-        self.history = []
+        self.history = [None]  # Версия 0 — это пустой список.
 
     def _get_current_state(self):
         """
@@ -61,6 +61,9 @@ class PersistentLinkedListFatNode:
             state.append(current.data)
             current = current.next_node
         return state
+
+    def __getitem__(self, index):
+        return self.get(index)
 
     def check_is_empty(self):
         """
@@ -96,7 +99,7 @@ class PersistentLinkedListFatNode:
         else:
             self.tail.next_node = new_node
         self.tail = new_node
-        self.history.append(self._clone_state())
+        self.history.append(self._clone_state())  # Добавляем новую версию
 
     def insert(self, index, item):
         """
@@ -126,7 +129,7 @@ class PersistentLinkedListFatNode:
             new_node = FatNode(item, prev_node=current.prev_node, next_node=current)
             current.prev_node.next_node = new_node
             current.prev_node = new_node
-        self.history.append(self._clone_state())
+        self.history.append(self._clone_state())  # Добавляем новую версию
 
     def remove(self, index):
         """
@@ -154,7 +157,7 @@ class PersistentLinkedListFatNode:
                 current = current.next_node
             current.prev_node.next_node = current.next_node
             current.next_node.prev_node = current.prev_node
-        self.history.append(self._clone_state())
+        self.history.append(self._clone_state())  # Добавляем новую версию
 
     def get(self, index):
         """
@@ -199,3 +202,23 @@ class PersistentLinkedListFatNode:
             state.append(current.data)
             current = current.next_node
         return state
+
+    def update_version(self, version):
+        """
+        Обновляет текущую версию списка на указанную.
+        :param version: Номер версии для обновления.
+        """
+        if version < 0 or version >= len(self.history):
+            raise ValueError(self.invalid_version_message)
+        self.head = self.history[version]
+        self.tail = self._get_tail(self.history[version])
+
+    def _get_tail(self, node):
+        """
+        Находит хвостовой элемент списка.
+        :param node: Начальный узел для поиска хвоста.
+        :return: Хвостовой элемент.
+        """
+        while node and node.next_node:
+            node = node.next_node
+        return node
