@@ -33,8 +33,9 @@ class PersistentLinkedList(BasePersistent):
         :param initial_state: Начальное состояние списка, если оно передано.
         :return: None
         """
-        head = None
-        tail = None
+        super().__init__(None)
+        self.size = 0
+        head = tail = None
         if initial_state:
             for data in initial_state:
                 node = Node(data)
@@ -44,7 +45,8 @@ class PersistentLinkedList(BasePersistent):
                     tail.next_node = node
                     node.prev = tail
                     tail = node
-        super().__init__((head, tail))
+            self.size = len(initial_state)
+        self._history[0] = (head, tail)
 
     def add(self, data: any) -> None:
         """
@@ -62,6 +64,7 @@ class PersistentLinkedList(BasePersistent):
             tail.next_node = new_node
             new_node.prev = tail
             tail = new_node
+        self.size += 1
         self._history[self._last_state] = (head, tail)
 
     def add_first(self, data: any) -> None:
@@ -79,6 +82,7 @@ class PersistentLinkedList(BasePersistent):
         head = new_node
         if tail is None:
             tail = new_node
+        self.size += 1
         self._history[self._last_state] = (head, tail)
 
     def insert(self, index: int, data: any) -> None:
@@ -102,9 +106,12 @@ class PersistentLinkedList(BasePersistent):
                 current.prev = new_node
                 if current == head:
                     head = new_node
+                self.size += 1
                 break
             count += 1
             current = current.next_node
+        else:
+            raise IndexError("Index out of range")
         self._history[self._last_state] = (head, tail)
 
     def pop(self, index: int) -> any:
@@ -130,6 +137,7 @@ class PersistentLinkedList(BasePersistent):
                 if current == tail:
                     tail = current.prev
                 self._create_new_state()
+                self.size -= 1
                 self._history[self._last_state] = (head, tail)
                 return value
             count += 1
@@ -144,19 +152,22 @@ class PersistentLinkedList(BasePersistent):
         :return: None
         :raises ValueError: Если элемент не найден в списке.
         """
-        head, _ = self._history[self._current_state]
+        head, tail = self._history[self._current_state]
         current = head
-        previous = None
         while current:
             if current.value == value:
-                if previous:
-                    previous.next_node = current.next_node
-                else:
+                if current.prev:
+                    current.prev.next_node = current.next_node
+                if current.next_node:
+                    current.next_node.prev = current.prev
+                if current == head:
                     head = current.next_node
+                if current == tail:
+                    tail = current.prev
                 self._create_new_state()
-                self._history[self._last_state] = (head, self._history[self._last_state][1])
+                self.size -= 1
+                self._history[self._last_state] = (head, tail)
                 return
-            previous = current
             current = current.next_node
         raise ValueError(f"Value {value} not found in the list")
 
@@ -186,30 +197,6 @@ class PersistentLinkedList(BasePersistent):
             current = current.next_node
         raise IndexError("Index out of range")
 
-    def get_version(self, version: int) -> tuple:
-        """
-        Возвращает состояние персистентной структуры данных на указанной версии.
-
-        :param version: Номер версии.
-        :return: Состояние персистентной структуры данных на указанной версии.
-        :raises ValueError: Если указанная версия не существует.
-        """
-        if version > self._current_state or version < 0:
-            raise ValueError(f"Version {version} does not exist")
-        return self._history[version]
-
-    def update_version(self, version: int) -> None:
-        """
-        Обновляет текущую версию списка до указанной.
-
-        :param version: Номер версии для обновления.
-        :return: None
-        :raises ValueError: Если указанная версия не существует.
-        """
-        if version > self._current_state or version < 0:
-            raise ValueError(f"Version {version} does not exist")
-        self._current_state = version
-
     def clear(self) -> None:
         """
         Очищает список, создавая новую версию.
@@ -217,6 +204,7 @@ class PersistentLinkedList(BasePersistent):
         :return: None
         """
         self._create_new_state()
+        self.size = 0
         self._history[self._last_state] = (None, None)
 
     def __getitem__(self, index: int) -> any:
@@ -265,13 +253,7 @@ class PersistentLinkedList(BasePersistent):
 
         :return: Количество элементов в текущей версии списка.
         """
-        head, tail = self._history[self._current_state]
-        current = head
-        size = 0
-        while current:
-            size += 1
-            current = current.next_node
-        return size
+        return self.size
 
     def check_is_empty(self) -> bool:
         """
