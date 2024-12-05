@@ -40,5 +40,5 @@ class BasePersistent:
     def _create_new_state(self) -> None:
         """Создает новую версию."""
         self._last_state += 1
-        self._current_state = self._last_state
         self._history[self._last_state] = deepcopy(self._history[self._current_state])
+        self._current_state = self._last_state
