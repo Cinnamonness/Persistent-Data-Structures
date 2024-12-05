@@ -24,6 +24,8 @@
   - [API](#api)
   - [Примеры использования](#примеры-использования)
     - [Массив (Persistent Array)](#массив-persistent-array)
+    - [Список (Persistent Linked List)](#список-persistent-linked-list)
+    - [Aссоциативный массив (Persistent Map)](#aссоциативный-массив-persistent-map)
     - [Двусвязный список (Persistent Linked List)](#двусвязный-список-persistent-linked-list)
     - [Ассоциативный массив (Persistent Map)](#ассоциативный-массив-persistent-map)
   - [Используемые источники](#используемые-источники)
@@ -255,6 +257,26 @@ print("Массив после обновления до версии 2:", arr.g
 
 ```console
 Массив после обновления до версии 2: [10, 20, 0, 0, 0]
+```
+
+### Список (Persistent Linked List)
+
+### Aссоциативный массив (Persistent Map)
+Примеры использования:
+```
+    >>> map = PersistentMap({'foo': 'bar'}) # Создаем пустой ассоциативный массив
+    >>> map['key'] = 'value' # Добавляем элемент
+    >>> map['key'] = 'value2' # Изменяем элемент в следующей версии
+    >>> map['key'] # Получаем элемент последней версии
+    'value2'
+    >>> map.get(1, 'key')
+    {'key': 'value'}
+    >>> map.remove('key') # Удаляем элемент в новой версии
+    >>> map.clear() # Очищаем ассоциативный массив в новой версии
+    >>> map.get(0, 'key') # Пытаемся получить элемент отсутствующий в переданной версии
+    Traceback (most recent call last):
+        ...
+    KeyError: Key "key" does not exist
 ```
 
 **Сравнение методов Path Copy и Fat Node для реализации персистентных массивов**

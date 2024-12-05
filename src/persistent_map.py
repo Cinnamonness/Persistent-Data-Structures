@@ -1,59 +1,66 @@
-from copy import deepcopy
+from base_persistent import BasePersistent
 
 
-class PersistentMap:
+class PersistentMap(BasePersistent):
     """Персистентный ассоциативный массив.
 
     Представляет собой словарь, который сохраняет историю изменений.
-
-    Примеры использования:
-    >>> map = PersistentMap({'foo': 'bar'}) # Создаем пустой ассоциативный массив
-    >>> map['key'] = 'value' # Добавляем элемент
-    >>> map['key'] = 'value2' # Изменяем элемент в следующей версии
-    >>> map['key'] # Получаем элемент последней версии
-    'value2'
-    >>> map.get(1, 'key')
-    {'key': 'value'}
-    >>> map.remove('key') # Удаляем элемент в новой версии
-    >>> map.clear() # Очищаем ассоциативный массив в новой версии
-    >>> map.get(0, 'key') # Пытаемся получить элемент отсутствующий в переданной версии
-    Traceback (most recent call last):
-        ...
-    KeyError: Key "key" does not exist
-
     """
-    def __init__(self, dictionary: dict = {}):
-        self._history = {0: dictionary}
-        self._current_state = 0
+    def __init__(self, initial_state: dict = {}) -> None:
+        """Инициализирует персистентный ассоциативный массив.
 
-    def __setitem__(self, key, value):
-        """Обновляет или создает элемент по указанному ключу в новой версии."""
-        self._update_version()
-        self.history[self.current_state][key] = value
+        :param initial_state: Начальное состояние персистентной структуры данных.
+        """
+        super().__init__(initial_state)
 
-    def __getitem__(self, key):
-        """Возвращает элемент последней версии по указанному ключу."""
-        return self.history[self.current_state][key]
+    def __setitem__(self, key: any, value: any) -> None:
+        """Обновляет или создает элемент по указанному ключу в новой версии.
 
-    def get(self, version: int, key: int):
-        """Возвращает элемент с указанной версией и ключом."""
-        if version > self.current_state or version < 0:
+        :param key: Ключ
+        :param value: Значение
+        """
+        self._create_new_state()
+        self._history[self._last_state][key] = value
+
+    def __getitem__(self, key: any) -> any:
+        """Возвращает элемент текущей версии по указанному ключу.
+
+        :param key: Ключ
+        :return: Значение сответствующее указанному ключу или None, если ключ не существует."""
+        return self._history[self._current_state][key]
+
+    def get(self, version: int, key: any) -> any:
+        """Возвращает элемент с указанной версией и ключом.
+
+        :param version: Номер версии
+        :param key: Ключ
+        :return: Значение сответствующее указанному ключу или None, если ключ не существует.
+        :raises ValueError: Если версия не существует
+        :raises KeyError: Если ключ не существует
+        """
+        if version > self._current_state or version < 0:
             raise ValueError(f'Version "{version}" does not exist')
-        if key not in self.history[version]:
+        if key not in self._history[version]:
             raise KeyError(f'Key "{key}" does not exist')
-        return self.history[version]
+        return self._history[version]
 
-    def remove(self, key):
-        """Удаляет элемент по указанному ключу в новой версии."""
-        self._update_version()
-        self.history[self.current_state].pop(key)
+    def pop(self, key: any) -> any:
+        """Удаляет элемент по указанному ключу и возвращает его.
 
-    def clear(self):
+        :param key: Ключ
+        :return: Удаленный элемент
+        """
+        self._create_new_state()
+        return self._history[self._last_state].pop(key)
+
+    def remove(self, key: any) -> None:
+        """Удаляет элемент по указанному ключу в новой версии.
+
+        :param key: Ключ
+        """
+        self.pop(key)
+
+    def clear(self) -> None:
         """Очищает ассоциативный массив в новой версии."""
-        self._update_version()
-        self.history[self.current_state] = {}
-
-    def _update_version(self):
-        """Обновляет текущую версию и сохраняет копию предыдущей версии."""
-        self.current_state += 1
-        self.history[self.current_state] = deepcopy(self.history[self.current_state-1])
+        self._create_new_state()
+        self._history[self._current_state] = {}
