@@ -1,4 +1,4 @@
-from base_persistent import BasePersistent
+from persistent_data_structures.base_persistent import BasePersistent
 
 
 class Node:
