@@ -131,112 +131,134 @@
 
 Создание объекта:
 ```python
-obj = [PersistentDataStructure]([args])
+from persistent_data_structure import PersistentLinkedList, PersistentArray, PersistentMap
+
+lst = PersistentLinkedList()
+arr = PersistentLinkedList()
+dct = PersistentMap()
 ```
 
 Обращение к элементу текщей версии:
 ```python
-obj[index]
+lst[index]
+arr[index]
+dct[key]
 ```
 
 Обращение по индексу к элементу произвольной версии для массива и списка:
 ```python
-obj.get(version, index)
+arr.get(version, index)
+lst.get(version, index)
 ```
 
 Обращение по ключу к элементу произвольной версии для мапы:
 ```python
-obj.get(version, key)
+dct.get(version, key)
 ```
 
 Добавление элемента в конец в новую версию для массива и списка:
 ```python
-obj.add(element)
+arr.add(element)
+lst.add(element)
 ```
 
 Добавление элемента в начало в новую версию списка:
 ```python
-obj.add_first(element)
+lst.add_first(element)
 ```
 
 Удаление элемента по индексу для массива и списка в новой версии и возвращение элемента:
 ```python
-obj.pop(index)
+arr.pop(index)
+lst.pop(index)
 ```
 
 Удаление элемента по ключу для мапы в новой версии и возвращение элемента:
 ```python
-obj.pop(key)
+dct.pop(key)
 ```
 
 Обновление элемента по индексу в новой версии массива или списка:
 ```python
-obj[index] = element
+arr[index] = element
+lst[index] = element
 ```
 
 Обновление элемента по ключу в новой версии мапы:
 ```python
-obj['key'] = element
+dct['key'] = element
 ```
 
 Вставка элемента в новую версию по указанному индексу для массива или списка:
 ```python
-obj.insert(index, element)
+arr.insert(index, element)
+lst.insert(index, element)
 ```
 
 Удаление элемента в новой версии массива или списка по индексу:
 ```python
-obj.remove(index)
+arr.remove(index)
+lst.remove(index)
 ```
 
 Удаление элемента в новой версии мапы по ключу:
 ```python
-obj.remove(key)
+dct.remove(key)
 ```
 
 Получение размера массива или списка для текущей версии:
 ```python
-obj.get_size()
+arr.get_size()
+lst.get_size()
 ```
 
 Проверка на пустоту для массива или списка:
 ```python
-obj.check_is_empty()
+arr.check_is_empty()
+lst.check_is_empty()
 ```
 
 Возвращение состояние объекта для указанной версии:
 ```python
-obj.get_version(version)
+arr.get_version(version)
+lst.get_version(version)
+dct.get_version(version)
 ```
 
 Обновление текущей версии объекта до указанной:
 ```python
-obj.update_version(version)
+arr.update_version(version)
+lst.update_version(version)
+dct.update_version(version)
 ```
 
 Получение элемента текущей версии массива или списка по указанному индексу. 
 ```python
-obj.__getitem__(index)
+arr.__getitem__(index)
+lst.__getitem__(index)
 ```
 
 Получение элемента текущей версии мапы по указанному ключу. 
 ```python
-obj.__getitem__(key)
+dct.__getitem__(key)
 ```
 
 Обновление или создание элемента по указанному индексу в новой версии для массива или списка.
 ```python
-obj.__setitem__(index)
+arr.__setitem__(index)
+lst.__setitem__(index)
 ```
 
 Обновление или создание элемента по указанному ключу в новой версии для мапы.
 ```python
-obj.__setitem__(key)
+dct.__setitem__(key)
 ```
 
 Очистка объекта, при этом создается новая версия. 
 ```python
-obj.clear()
+arr.clear()
+lst.clear()
+dct.clear()
 ```
 
 ---
