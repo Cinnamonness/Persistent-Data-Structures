@@ -1,44 +1,41 @@
-from persistent_data_structures.base_persistent import BasePersistent
+from base_persistent import BasePersistent, Node
+from typing import Any, Optional
 
 
-class Node:
-    """
-    Класс для узлов двусвязного списка.
-    """
+class ListNode:
+    """Класс узла для хранения состояния в двусвязном списке."""
 
-    def __init__(self, value: any = None, prev: 'Node' = None, next_node: 'Node' = None) -> None:
+    def __init__(self, value: Any = None, prev: Optional['ListNode'] = None,
+                 next_node: Optional['ListNode'] = None) -> None:
         """
-        Инициализирует новый узел.
+        Инициализация узла списка.
 
-        :param value: Значение для хранения в узле (по умолчанию None).
+        :param value: Значение, которое будет храниться в узле.
         :param prev: Ссылка на предыдущий узел (по умолчанию None).
         :param next_node: Ссылка на следующий узел (по умолчанию None).
         """
         self.value = value
         self.prev = prev
         self.next_node = next_node
+        self.children = {}
 
 
 class PersistentLinkedList(BasePersistent):
-    """Персистентный двусвязный список.
-    Класс PersistentLinkedList реализует неизменяемый двусвязный список
-    с возможностью хранения нескольких версий, где каждая
-    версия является изменением предыдущей.
-    """
+    """Персистентный двусвязный список, использующий базовый класс для версионирования."""
 
-    def __init__(self, initial_state: list = None) -> None:
+    def __init__(self, initial_state: Optional[list[Any]] = None) -> None:
         """
-        Инициализирует персистентный двусвязный список.
+        Инициализация персистентного списка.
 
-        :param initial_state: Начальное состояние списка, если оно передано.
-        :return: None
+        :param initial_state: Начальный список данных для создания состояния (по умолчанию None).
         """
-        super().__init__(None)
+        super().__init__(initial_state)
         self.size = 0
         head = tail = None
+
         if initial_state:
             for data in initial_state:
-                node = Node(data)
+                node = ListNode(data)
                 if head is None:
                     head = tail = node
                 else:
@@ -46,61 +43,62 @@ class PersistentLinkedList(BasePersistent):
                     node.prev = tail
                     tail = node
             self.size = len(initial_state)
-        self._history[0] = (head, tail)
 
-    def add(self, data: any) -> None:
-        """
-        Добавляет элемент в конец списка в новой версии.
+        self._version_map[0] = Node(head)
 
-        :param data: Данные, которые нужно добавить в список.
-        :return: None
-        """
-        self._create_new_state()
-        head, tail = self._history[self._last_state]
-        new_node = Node(data)
-        if tail is None:
-            head = tail = new_node
-        else:
+    def add(self, data: Any) -> None:
+        """Добавляет элемент в конец списка в новой версии."""
+        self._create_new_state_doubly_linked_list()
+        head = self._version_map[self._current_version].state
+        tail = self._get_tail(head)
+        new_node = ListNode(data)
+
+        if tail:
             tail.next_node = new_node
             new_node.prev = tail
-            tail = new_node
-        self.size += 1
-        self._history[self._last_state] = (head, tail)
+        else:
+            head = new_node
 
-    def add_first(self, data: any) -> None:
+        self._version_map[self._current_version].state = head
+        self.size += 1
+
+    def add_first(self, data: Any) -> None:
         """
         Добавляет элемент в начало списка в новой версии.
 
         :param data: Данные, которые нужно добавить в начало списка.
         :return: None
         """
-        self._create_new_state()
-        head, tail = self._history[self._last_state]
-        new_node = Node(data, next_node=head)
+        self._create_new_state_doubly_linked_list()
+        head = self._version_map[self._current_version].state
+        new_node = ListNode(data, next_node=head)
+
         if head:
             head.prev = new_node
+
         head = new_node
-        if tail is None:
-            tail = new_node
+        self._version_map[self._current_version].state = head
         self.size += 1
-        self._history[self._last_state] = (head, tail)
 
-    def insert(self, index: int, data: any) -> None:
-        """
-        Вставляет элемент в список по указанному индексу.
-
-        :param index: Индекс, на котором нужно вставить элемент.
-        :param data: Данные, которые нужно вставить.
-        :return: None
-        :raises IndexError: Если индекс выходит за пределы списка.
-        """
-        self._create_new_state()
-        head, tail = self._history[self._last_state]
+    def insert(self, index: int, data: Any) -> None:
+        """Вставляет элемент в список по указанному индексу."""
+        self._create_new_state_doubly_linked_list()
+        head = self._version_map[self._current_version].state
         current = head
         count = 0
+
+        if index == 0:
+            new_node = ListNode(data, next_node=head)
+            if head:
+                head.prev = new_node
+            head = new_node
+            self._version_map[self._current_version].state = head
+            self.size += 1
+            return
+
         while current:
             if count == index:
-                new_node = Node(data, prev=current.prev, next_node=current)
+                new_node = ListNode(data, prev=current.prev, next_node=current)
                 if current.prev:
                     current.prev.next_node = new_node
                 current.prev = new_node
@@ -112,9 +110,10 @@ class PersistentLinkedList(BasePersistent):
             current = current.next_node
         else:
             raise IndexError("Index out of range")
-        self._history[self._last_state] = (head, tail)
 
-    def pop(self, index: int) -> any:
+        self._version_map[self._current_version].state = head
+
+    def pop(self, index: int) -> Any:
         """
         Удаление элемента в новой версии списка и возвращение его значения.
 
@@ -122,9 +121,11 @@ class PersistentLinkedList(BasePersistent):
         :return: Значение удаленного элемента.
         :raises IndexError: Если индекс выходит за пределы списка.
         """
-        head, tail = self._history[self._current_state]
+        self._create_new_state_doubly_linked_list()
+        head = self._version_map[self._current_version].state
         current = head
         count = 0
+
         while current:
             if count == index:
                 value = current.value
@@ -134,26 +135,28 @@ class PersistentLinkedList(BasePersistent):
                     current.next_node.prev = current.prev
                 if current == head:
                     head = current.next_node
-                if current == tail:
-                    tail = current.prev
-                self._create_new_state()
                 self.size -= 1
-                self._history[self._last_state] = (head, tail)
-                return value
+                break
             count += 1
             current = current.next_node
-        raise IndexError("Index out of range")
+        else:
+            raise IndexError("Index out of range")
 
-    def remove(self, value: any) -> None:
+        self._version_map[self._current_version].state = head
+        return value
+
+    def remove(self, value: Any) -> None:
         """
         Удаляет элемент из списка в новой версии.
 
-        :param data: Данные элемента для удаления.
+        :param value: Данные элемента для удаления.
         :return: None
         :raises ValueError: Если элемент не найден в списке.
         """
-        head, tail = self._history[self._current_state]
+        self._create_new_state_doubly_linked_list()
+        head = self._version_map[self._current_version].state
         current = head
+
         while current:
             if current.value == value:
                 if current.prev:
@@ -162,16 +165,15 @@ class PersistentLinkedList(BasePersistent):
                     current.next_node.prev = current.prev
                 if current == head:
                     head = current.next_node
-                if current == tail:
-                    tail = current.prev
-                self._create_new_state()
                 self.size -= 1
-                self._history[self._last_state] = (head, tail)
-                return
+                break
             current = current.next_node
-        raise ValueError(f"Value {value} not found in the list")
+        else:
+            raise ValueError(f"Value {value} not found in the list")
 
-    def get(self, version: int = None, index: int = None) -> any:
+        self._version_map[self._current_version].state = head
+
+    def get(self, version: int = None, index: int = None) -> Any:
         """
         Возвращает элемент по индексу из указанной версии.
 
@@ -182,32 +184,36 @@ class PersistentLinkedList(BasePersistent):
         :raises IndexError: Если индекс выходит за пределы списка.
         """
         if version is None:
-            version = self._current_state
-        if version > self._current_state or version < 0:
+            version = self._current_version
+
+        if version not in self._version_map:
             raise ValueError(f"Version {version} does not exist")
-        head, tail = self._history[version]
-        if head is None:
-            raise IndexError("Index out of range")
+        head = self._version_map[version].state
         current = head
         count = 0
+
         while current:
             if count == index:
                 return current.value
             count += 1
             current = current.next_node
+
         raise IndexError("Index out of range")
 
+    def _get_tail(self, head: ListNode) -> Optional[ListNode]:
+        """Возвращает последний узел в списке."""
+        current = head
+        while current and current.next_node:
+            current = current.next_node
+        return current
+
     def clear(self) -> None:
-        """
-        Очищает список, создавая новую версию.
-
-        :return: None
-        """
-        self._create_new_state()
+        """Очищает список, создавая новую версию."""
+        self._create_new_state_doubly_linked_list()
+        self._version_map[self._current_version].state = None
         self.size = 0
-        self._history[self._last_state] = (None, None)
 
-    def __getitem__(self, index: int) -> any:
+    def __getitem__(self, index: int) -> Any:
         """
         Получение значения элемента из текущей версии списка по индексу.
 
@@ -215,7 +221,7 @@ class PersistentLinkedList(BasePersistent):
         :return: Значение элемента в текущей версии списка по заданному индексу.
         :raises IndexError: Если индекс выходит за пределы списка.
         """
-        head, tail = self._history[self._current_state]
+        head = self._version_map[self._current_version].state
         current = head
         count = 0
         while current:
@@ -225,7 +231,7 @@ class PersistentLinkedList(BasePersistent):
             current = current.next_node
         raise IndexError("Index out of range")
 
-    def __setitem__(self, index: int, value: any) -> None:
+    def __setitem__(self, index: int, value: Any) -> None:
         """
         Обновление значения элемента в новой версии списка по индексу.
 
@@ -245,7 +251,25 @@ class PersistentLinkedList(BasePersistent):
             current = current.next_node
         else:
             raise IndexError("Index out of range")
-        self._history[self._last_state] = (head, tail)
+        self._version_map[self._last_state] = (head, tail)
+
+    def _deep_copy_list(self, head: ListNode) -> Optional[ListNode]:
+        """Глубокое копирование списка с его узлами."""
+        if not head:
+            return None
+
+        new_head = ListNode(head.value)
+        current = head.next_node
+        new_current = new_head
+
+        while current:
+            new_node = ListNode(current.value)
+            new_current.next_node = new_node
+            new_node.prev = new_current
+            new_current = new_node
+            current = current.next_node
+
+        return new_head
 
     def get_size(self) -> int:
         """
@@ -261,5 +285,15 @@ class PersistentLinkedList(BasePersistent):
 
         :return: True, если список пуст, иначе False.
         """
-        head, tail = self._history[self._current_state]
+        head = self._version_map[self._current_version].state
         return head is None
+
+    def __str__(self) -> str:
+        """Отображение списка для вывода."""
+        head = self._version_map[self._current_version].state
+        result = []
+        current = head
+        while current:
+            result.append(current.value)
+            current = current.next_node
+        return '->'.join(map(str, result))
