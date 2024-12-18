@@ -97,9 +97,9 @@ def test_set_version(persistent_list):
     """Тест 12. Проверка переключения между версиями"""
     persistent_list.add(5)
     persistent_list.add(6)
-    persistent_list.set_version_doubly_linked_list(0)
+    persistent_list.set_version(0)
     assert persistent_list.get_size() == 4
-    persistent_list.set_version_doubly_linked_list(2)
+    persistent_list.set_version(2)
     assert persistent_list.get_size() == 6
 
 
