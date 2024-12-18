@@ -1,45 +1,45 @@
 from base_persistent import BasePersistent
-from typing import Any, Dict
+from typing import Any
 
 
 class PersistentMap(BasePersistent):
-    """A persistent associative array.
+    """Персистентный ассоциативный массив.
 
-    Represents a dictionary that preserves the history of changes.
+    Представляет собой словарь, сохраняющий историю изменений.
     """
 
-    def __init__(self, initial_state: Dict[Any, Any] = {}) -> None:
-        """Initializes a persistent associative array.
+    def __init__(self, initial_state: dict[Any, Any] = {}) -> None:
+        """Инициализирует персистентный ассоциативный массив.
 
-        :param initial_state: The initial state of the persistent data structure.
+        :param initial_state: Начальное состояние персистентной структуры данных.
         """
         super().__init__(initial_state)
 
     def __setitem__(self, key: Any, value: Any) -> None:
-        """Updates or creates an item by the specified key in the new version.
+        """Обновляет или создаёт элемент по указанному ключу в новой версии.
 
-        :param key: The key to be updated or created.
-        :param value: The value associated with the key.
+        :param key: Ключ, который нужно обновить или создать.
+        :param value: Значение, связанное с указанным ключом.
         """
         self._create_new_state()
         self._version_map[self._last_version].state[key] = value
 
     def __getitem__(self, key: Any) -> Any:
-        """Returns the item of the current version by the specified key.
+        """Возвращает элемент текущей версии по указанному ключу.
 
-        :param key: The key of the item to be fetched.
-        :return: The value corresponding to the specified key or None if the key does not exist.
+        :param key: Ключ элемента, который нужно получить.
+        :return: Значение, соответствующее указанному ключу, или None, если ключ не существует.
         """
         return self._version_map[self._current_version].state.get(key)
 
     def get(self, version: int, key: Any) -> Any:
-        """Returns the item from the specified version and key.
+        """Возвращает элемент из указанной версии по ключу.
 
-        :param version: The version number.
-        :param key: The key of the item to be fetched.
-        :return: The value corresponding to the specified key.
-        :raises ValueError: If the version does not exist.
-        :raises KeyError: If the key does not exist.
+        :param version: Номер версии.
+        :param key: Ключ элемента, который нужно получить.
+        :return: Значение, соответствующее указанному ключу.
+        :raises ValueError: Если версия не существует.
+        :raises KeyError: Если ключ не существует.
         """
         if version not in self._version_map:
             raise ValueError(f'Version "{version}" does not exist')
@@ -48,22 +48,22 @@ class PersistentMap(BasePersistent):
         return self._version_map[version].state[key]
 
     def pop(self, key: Any) -> Any:
-        """Removes and returns the item by the specified key.
+        """Удаляет и возвращает элемент по указанному ключу.
 
-        :param key: The key of the item to be removed.
-        :return: The removed item.
+        :param key: Ключ элемента, который нужно удалить.
+        :return: Удалённый элемент.
         """
         self._create_new_state()
         return self._version_map[self._last_version].state.pop(key)
 
     def remove(self, key: Any) -> None:
-        """Removes an item by the specified key in the new version.
+        """Удаляет элемент по указанному ключу в новой версии.
 
-        :param key: The key of the item to be removed.
+        :param key: Ключ элемента, который нужно удалить.
         """
         self.pop(key)
 
     def clear(self) -> None:
-        """Clears the associative array in the new version."""
+        """Очищает ассоциативный массив в новой версии."""
         self._create_new_state()
         self._version_map[self._current_version].state.clear()

@@ -48,7 +48,7 @@ class PersistentLinkedList(BasePersistent):
 
     def add(self, data: Any) -> None:
         """Добавляет элемент в конец списка в новой версии."""
-        self._create_new_state_doubly_linked_list()
+        self._create_new_state()
         head = self._version_map[self._current_version].state
         tail = self._get_tail(head)
         new_node = ListNode(data)
@@ -69,7 +69,7 @@ class PersistentLinkedList(BasePersistent):
         :param data: Данные, которые нужно добавить в начало списка.
         :return: None
         """
-        self._create_new_state_doubly_linked_list()
+        self._create_new_state()
         head = self._version_map[self._current_version].state
         new_node = ListNode(data, next_node=head)
 
@@ -82,7 +82,7 @@ class PersistentLinkedList(BasePersistent):
 
     def insert(self, index: int, data: Any) -> None:
         """Вставляет элемент в список по указанному индексу."""
-        self._create_new_state_doubly_linked_list()
+        self._create_new_state()
         head = self._version_map[self._current_version].state
         current = head
         count = 0
@@ -121,7 +121,7 @@ class PersistentLinkedList(BasePersistent):
         :return: Значение удаленного элемента.
         :raises IndexError: Если индекс выходит за пределы списка.
         """
-        self._create_new_state_doubly_linked_list()
+        self._create_new_state()
         head = self._version_map[self._current_version].state
         current = head
         count = 0
@@ -153,7 +153,7 @@ class PersistentLinkedList(BasePersistent):
         :return: None
         :raises ValueError: Если элемент не найден в списке.
         """
-        self._create_new_state_doubly_linked_list()
+        self._create_new_state()
         head = self._version_map[self._current_version].state
         current = head
 
@@ -209,7 +209,7 @@ class PersistentLinkedList(BasePersistent):
 
     def clear(self) -> None:
         """Очищает список, создавая новую версию."""
-        self._create_new_state_doubly_linked_list()
+        self._create_new_state()
         self._version_map[self._current_version].state = None
         self.size = 0
 
@@ -270,6 +270,42 @@ class PersistentLinkedList(BasePersistent):
             current = current.next_node
 
         return new_head
+
+    def set_version(self, version: int) -> None:
+        """
+        Обновляет текущую версию персистентной структуры данных до
+        указанной для двусвязного списка.
+
+        :param version: Номер версии.
+        :raises ValueError: Если указанная версия не существует.
+        """
+        if version not in self._version_map:
+            raise ValueError(f'Version "{version}" does not exist')
+        self._current_version = version
+        self.root = self._version_map[version]
+        head = self._version_map[self._current_version].state
+        self.size: int = 0
+        current = head
+        while current:
+            self.size += 1
+            current = current.next_node
+        self._version_map[self._current_version].state = head
+
+    def _create_new_state(self) -> None:
+        """
+        Создает новую версию состояния для двусвязного списка,
+        минимизируя дублирование данных.
+
+        Этот метод копирует состояние двусвязного списка, создавая
+        новый узел с минимальным дублированием
+        данных, чтобы сохранить версионность структуры данных.
+
+        :raises ValueError: Если текущая версия не существует в карте версий.
+        """
+        self._current_version += 1
+        head = self._version_map[self._current_version - 1].state
+        new_head = self._deep_copy_list(head)
+        self._version_map[self._current_version] = Node(new_head)
 
     def get_size(self) -> int:
         """
