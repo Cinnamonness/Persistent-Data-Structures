@@ -15,6 +15,8 @@ class BasePersistent:
         self._history = {0: initial_state}
         self._current_state = 0
         self._last_state = 0
+        self._container = None
+        self._location = None
 
     def get_version(self, version):
         """Возвращает состояние персистентной структуры данных на указанной версии.
@@ -36,6 +38,16 @@ class BasePersistent:
         if version < 0 or version >= len(self._history):
             raise ValueError(f'Version "{version}" does not exist')
         self._current_state = version
+
+    def undo(self):
+        """Отменяет последнее изменение."""
+        if self._current_state > 0:
+            self._current_state -= 1
+
+    def redo(self):
+        """Отменяет отмененное изменение."""
+        if self._current_state < self._last_state:
+            self._current_state += 1
 
     def _create_new_state(self) -> None:
         """Создает новую версию."""

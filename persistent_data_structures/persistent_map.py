@@ -20,7 +20,12 @@ class PersistentMap(BasePersistent):
         :param value: Значение
         """
         self._create_new_state()
+        if isinstance(value, BasePersistent):
+            value._container = self
+            value._location = key
         self._history[self._last_state][key] = value
+        if self._container is not None:
+            self._container[self._location] = self._history[self._last_state]
 
     def __getitem__(self, key: any) -> any:
         """Возвращает элемент текущей версии по указанному ключу.
