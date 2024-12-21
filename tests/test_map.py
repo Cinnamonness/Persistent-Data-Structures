@@ -81,3 +81,35 @@ def test_version_history(persistent_map):
     assert persistent_map.get_version(0) == {'a': 1, 'b': 2}
     assert persistent_map.get_version(1) == {'a': 1, 'b': 2, 'c': 3}
     assert persistent_map.get_version(2) == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+
+
+def test_undo_redo_basic(persistent_map):
+    """Тест 11. Проверка undo-redo"""
+    persistent_map['c'] = 3
+    assert persistent_map.get_version(1) == {'a': 1, 'b': 2, 'c': 3}
+    persistent_map['a'] = 10
+    assert persistent_map.get_version(2) == {'a': 10, 'b': 2, 'c': 3}
+    persistent_map.undo()
+    assert persistent_map.get_version(1) == {'a': 1, 'b': 2, 'c': 3}
+    persistent_map.redo()
+    assert persistent_map.get_version(2) == {'a': 10, 'b': 2, 'c': 3}
+
+
+def test_undo_no_changes(persistent_map):
+    """Тест 12. отмены без изменений (начальная версия)"""
+    with pytest.raises(ValueError):
+        persistent_map.undo()
+
+
+def test_undo_and_redo_multiple_times(persistent_map):
+    """Тест 13. Проверка нескольких операций undo и redo"""
+    persistent_map['c'] = 3
+    persistent_map['d'] = 4
+    persistent_map['e'] = 5
+    assert persistent_map.get_version(3) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5}
+    persistent_map.undo()
+    persistent_map.undo()
+    assert persistent_map.get_version(1) == {'a': 1, 'b': 2, 'c': 3}
+    persistent_map.redo()
+    persistent_map.redo()
+    assert persistent_map.get_version(3) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5}

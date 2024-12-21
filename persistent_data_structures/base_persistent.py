@@ -43,6 +43,8 @@ class BasePersistent:
         """Отменяет последнее изменение."""
         if self._container is not None:
             raise NotImplementedError(f'Cannot undo inside container "{self._container}"')
+        if self._current_state == 0:
+            raise ValueError("No actions to undo")
         if self._current_state > 0:
             self._current_state -= 1
 
