@@ -40,9 +40,9 @@ def test_pop(linked_list):
 
 def test_remove(linked_list):
     """Тест 5. Проверка удаления элемента по значению"""
-    linked_list.remove(4)
-    with pytest.raises(ValueError):
-        linked_list.remove(4)
+    linked_list.remove(1)
+    with pytest.raises(IndexError):
+        linked_list.remove(8)
 
 
 def test_get(linked_list):

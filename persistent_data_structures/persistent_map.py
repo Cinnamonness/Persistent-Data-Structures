@@ -24,8 +24,6 @@ class PersistentMap(BasePersistent):
             value._container = self
             value._location = key
         self._history[self._last_state][key] = value
-        if self._container is not None:
-            self._container[self._location] = self._history[self._last_state]
 
     def __getitem__(self, key: any) -> any:
         """Возвращает элемент текущей версии по указанному ключу.
@@ -55,8 +53,11 @@ class PersistentMap(BasePersistent):
         :param key: Ключ
         :return: Удаленный элемент
         """
+        if key not in self._history[self._current_state]:
+            raise KeyError(f'Key "{key}" does not exist')
         self._create_new_state()
-        return self._history[self._last_state].pop(key)
+        popped_item = self._history[self._last_state].pop(key)
+        return popped_item
 
     def remove(self, key: any) -> None:
         """Удаляет элемент по указанному ключу в новой версии.
@@ -68,4 +69,4 @@ class PersistentMap(BasePersistent):
     def clear(self) -> None:
         """Очищает ассоциативный массив в новой версии."""
         self._create_new_state()
-        self._history[self._current_state] = {}
+        self._history[self._last_state] = {}

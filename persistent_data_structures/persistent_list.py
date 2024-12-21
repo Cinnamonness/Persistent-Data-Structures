@@ -57,6 +57,9 @@ class PersistentLinkedList(BasePersistent):
         """
         self._create_new_state()
         head, tail = self._history[self._last_state]
+        if isinstance(data, BasePersistent):
+            data._container = self
+            data._location = self.size
         new_node = Node(data)
         if tail is None:
             head = tail = new_node
@@ -76,6 +79,9 @@ class PersistentLinkedList(BasePersistent):
         """
         self._create_new_state()
         head, tail = self._history[self._last_state]
+        if isinstance(data, BasePersistent):
+            data._container = self
+            data._location = 0
         new_node = Node(data, next_node=head)
         if head:
             head.prev = new_node
@@ -83,6 +89,13 @@ class PersistentLinkedList(BasePersistent):
         if tail is None:
             tail = new_node
         self.size += 1
+        # сдвигаем индексы персистентных элементов
+        current = head
+        while current.next_node:
+            current = current.next_node
+            if isinstance(current.value, BasePersistent):
+                current.value._location += 1
+
         self._history[self._last_state] = (head, tail)
 
     def insert(self, index: int, data: any) -> None:
@@ -94,8 +107,15 @@ class PersistentLinkedList(BasePersistent):
         :return: None
         :raises IndexError: Если индекс выходит за пределы списка.
         """
+        if index < 0 or index > self.size:
+            raise IndexError("Index out of range")
+
         self._create_new_state()
         head, tail = self._history[self._last_state]
+        if isinstance(data, BasePersistent):
+            data._container = self
+            data._location = index
+
         current = head
         count = 0
         while current:
@@ -107,11 +127,12 @@ class PersistentLinkedList(BasePersistent):
                 if current == head:
                     head = new_node
                 self.size += 1
-                break
+                count += 1
+
+            if isinstance(current.value, BasePersistent) and count > index:
+                current.value._location += 1
             count += 1
             current = current.next_node
-        else:
-            raise IndexError("Index out of range")
         self._history[self._last_state] = (head, tail)
 
     def pop(self, index: int) -> any:
@@ -122,12 +143,15 @@ class PersistentLinkedList(BasePersistent):
         :return: Значение удаленного элемента.
         :raises IndexError: Если индекс выходит за пределы списка.
         """
-        head, tail = self._history[self._current_state]
+        if index < 0 or index >= self.size:
+            raise IndexError("Index out of range")
+        self._create_new_state()
+        head, tail = self._history[self._last_state]
+        popped_value = self.__getitem__(index)
         current = head
         count = 0
         while current:
             if count == index:
-                value = current.value
                 if current.prev:
                     current.prev.next_node = current.next_node
                 if current.next_node:
@@ -136,40 +160,25 @@ class PersistentLinkedList(BasePersistent):
                     head = current.next_node
                 if current == tail:
                     tail = current.prev
-                self._create_new_state()
+
                 self.size -= 1
                 self._history[self._last_state] = (head, tail)
-                return value
+
+            if isinstance(current.value, BasePersistent) and count > index:
+                current.value._location -= 1
             count += 1
             current = current.next_node
-        raise IndexError("Index out of range")
+        return popped_value
 
-    def remove(self, value: any) -> None:
+    def remove(self, index: int) -> None:
         """
-        Удаляет элемент из списка в новой версии.
+        Удаляет элемент по индексу из списка в новой версии.
 
-        :param data: Данные элемента для удаления.
+        :param index: Индекс элемента для удаления.
         :return: None
-        :raises ValueError: Если элемент не найден в списке.
+        :raises IndexError: Если индекс выходит за пределы списка.
         """
-        head, tail = self._history[self._current_state]
-        current = head
-        while current:
-            if current.value == value:
-                if current.prev:
-                    current.prev.next_node = current.next_node
-                if current.next_node:
-                    current.next_node.prev = current.prev
-                if current == head:
-                    head = current.next_node
-                if current == tail:
-                    tail = current.prev
-                self._create_new_state()
-                self.size -= 1
-                self._history[self._last_state] = (head, tail)
-                return
-            current = current.next_node
-        raise ValueError(f"Value {value} not found in the list")
+        self.pop(index)
 
     def get(self, version: int = None, index: int = None) -> any:
         """
@@ -234,6 +243,9 @@ class PersistentLinkedList(BasePersistent):
         :raises IndexError: Если индекс выходит за пределы списка.
         """
         self._create_new_state()
+        if isinstance(value, BasePersistent):
+            value._container = self
+            value._location = index
         head, tail = self._history[self._last_state]
         current = head
         count = 0

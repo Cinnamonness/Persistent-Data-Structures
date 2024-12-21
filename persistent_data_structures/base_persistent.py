@@ -41,16 +41,31 @@ class BasePersistent:
 
     def undo(self):
         """Отменяет последнее изменение."""
+        if self._container is not None:
+            raise NotImplementedError(f'Cannot undo inside container "{self._container}"')
         if self._current_state > 0:
             self._current_state -= 1
 
     def redo(self):
         """Отменяет отмененное изменение."""
+        if self._container is not None:
+            raise NotImplementedError(f'Cannot redo inside container "{self._container}"')
         if self._current_state < self._last_state:
             self._current_state += 1
 
     def _create_new_state(self) -> None:
         """Создает новую версию."""
+        # Персистентные структуры могут быть вложенными,
+        # поэтому нужно сохранять историю изменений в родительской персистентной структуре
+        if self._container is not None:
+            # В текущей версии родительской структуры подменяем имеющуюся вложенную структуру
+            # на ее копию, таким образом изменения во вложенной структуре не будут отражаться на
+            # прощлых версиях родительской структуры
+            self._container._history[
+                self._container._current_state
+            ][self._location] = deepcopy(self)
         self._last_state += 1
         self._history[self._last_state] = deepcopy(self._history[self._current_state])
         self._current_state = self._last_state
+        if self._container is not None:
+            self._container[self._location] = self

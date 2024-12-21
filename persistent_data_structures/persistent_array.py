@@ -54,6 +54,9 @@ class PersistentArray(BasePersistent):
         :param value (int): Значение нового элемента, который добавляется в массив.
         """
         self._create_new_state()
+        if isinstance(value, BasePersistent):
+            value._container = self
+            value._location = self.size
         self._history[self._last_state] = np.append(self._history[self._last_state], value)
         self.size += 1
 
@@ -70,6 +73,10 @@ class PersistentArray(BasePersistent):
         self._create_new_state()
         self._history[self._last_state] = np.delete(self._history[self._last_state], index)
         self.size -= 1
+        # Сдвигаем индексы всех элементов BasePersistent после удаленного элемента
+        for i in range(index, self.size):
+            if isinstance(self._history[self._current_state][i], BasePersistent):
+                self._history[self._current_state][i]._location -= 1
         return removed_element
 
     def __setitem__(self, index: int, value: any) -> None:
@@ -83,6 +90,9 @@ class PersistentArray(BasePersistent):
         """
         if index < 0 or index >= self.size:
             raise ValueError("Invalid index")
+        if isinstance(value, BasePersistent):
+            value._container = self
+            value._location = index
         self._create_new_state()
         self._history[self._last_state][index] = value
 
@@ -97,9 +107,16 @@ class PersistentArray(BasePersistent):
         """
         if index < 0 or index > self.size:
             raise ValueError("Invalid index")
+        if isinstance(value, BasePersistent):
+            value._container = self
+            value._location = index
         self._create_new_state()
         self._history[self._last_state] = np.insert(self._history[self._last_state], index, value)
         self.size += 1
+        # Сдвигаем индексы всех элементов BasePersistent после добавленного элемента
+        for i in range(index+1, self.size):
+            if isinstance(self._history[self._current_state][i], BasePersistent):
+                self._history[self._current_state][i]._location += 1
 
     def remove(self, index: int) -> None:
         """Удаление элемента в новой версии массива по индексу.
