@@ -95,3 +95,32 @@ def test_check_is_empty(linked_list):
     assert linked_list.check_is_empty() is True
     linked_list.add(10)
     assert linked_list.check_is_empty() is False
+
+
+def test_undo(linked_list):
+    """Тест 12. Проверка отмены последнего изменения"""
+    linked_list.add(6)
+    linked_list.add(7)
+    assert linked_list.get(index=5) == 6
+    assert linked_list.get(index=6) == 7
+
+    linked_list.undo()
+    assert linked_list.get(index=5) == 6
+    try:
+        linked_list.get(index=6)
+    except IndexError:
+        pass
+
+
+def test_redo(linked_list):
+    """Тест 13. Проверка отмены отмены изменений (redo)"""
+    linked_list.add(6)
+    linked_list.add(7)
+    assert linked_list.get(index=5) == 6
+    assert linked_list.get(index=6) == 7
+    linked_list.undo()
+    linked_list.undo()
+    linked_list.redo()
+    assert linked_list.get(index=5) == 6
+    linked_list.redo()
+    assert linked_list.get(index=6) == 7
