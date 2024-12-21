@@ -15,8 +15,6 @@ class BasePersistent:
         self._history = {0: initial_state}
         self._current_state = 0
         self._last_state = 0
-        self._container = None
-        self._location = None
 
     def get_version(self, version):
         """Возвращает состояние персистентной структуры данных на указанной версии.
