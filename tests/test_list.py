@@ -136,3 +136,14 @@ def test_get_invalid_version(persistent_list):
     """Тест 16. Проверка ошибки при попытке получить версию, которой не существует"""
     with pytest.raises(ValueError):
         persistent_list.get_version(999)
+
+
+def test_version_history(persistent_list):
+    """Тест 17. Проверка версионности"""
+    persistent_list.add(4)
+    persistent_list.add_first(0)
+    persistent_list.insert(2, 99)
+    assert persistent_list.get(0, 0) == 1
+    assert persistent_list.get(1, 3) == 4
+    assert persistent_list.get(2, 0) == 0
+    assert persistent_list.get(3, 2) == 99
