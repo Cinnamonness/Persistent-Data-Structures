@@ -49,11 +49,14 @@ class BasePersistent:
             self._current_state -= 1
 
     def redo(self):
-        """Отменяет отмененное изменение."""
+        """Повторяет последнее отмененное изменение.
+
+        :raises ValueError: Если нет операций."""
         if self._container is not None:
             raise NotImplementedError(f'Cannot redo inside container "{self._container}"')
-        if self._current_state < self._last_state:
-            self._current_state += 1
+        if self._current_state >= self._last_state:
+            raise ValueError("No operations to redo")
+        self._current_state += 1
 
     def _create_new_state(self) -> None:
         """Создает новую версию."""

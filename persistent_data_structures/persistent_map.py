@@ -1,4 +1,4 @@
-from persistent_data_structures.base_persistent import BasePersistent
+from base_persistent import BasePersistent
 
 
 class PersistentMap(BasePersistent):
@@ -45,7 +45,7 @@ class PersistentMap(BasePersistent):
             raise ValueError(f'Version "{version}" does not exist')
         if key not in self._history[version]:
             raise KeyError(f'Key "{key}" does not exist')
-        return self._history[version]
+        return self._history[version][key]
 
     def pop(self, key: any) -> any:
         """Удаляет элемент по указанному ключу и возвращает его.
