@@ -53,9 +53,11 @@ class PersistentArray(BasePersistent):
 
         :param value (int): Значение нового элемента, который добавляется в массив.
         """
+        self._mutex.acquire()
         self._create_new_state()
         self._history[self._last_state] = np.append(self._history[self._last_state], value)
         self.size += 1
+        self._mutex.release()
 
     def pop(self, index: int) -> any:
         """Удаление элемента в новой версии массива и возвращение его значения.
@@ -66,10 +68,12 @@ class PersistentArray(BasePersistent):
         """
         if index < 0 or index >= self.size:
             raise ValueError("Invalid index")
+        self._mutex.acquire()
         removed_element = self._history[self._current_state][index]
         self._create_new_state()
         self._history[self._last_state] = np.delete(self._history[self._last_state], index)
         self.size -= 1
+        self._mutex.release()
         return removed_element
 
     def __setitem__(self, index: int, value: any) -> None:
@@ -83,8 +87,10 @@ class PersistentArray(BasePersistent):
         """
         if index < 0 or index >= self.size:
             raise ValueError("Invalid index")
+        self._mutex.acquire()
         self._create_new_state()
         self._history[self._last_state][index] = value
+        self._mutex.release()
 
     def insert(self, index: int, value: any) -> None:
         """Вставка нового элемента в массив в указанную позицию в новой версии.
@@ -97,9 +103,11 @@ class PersistentArray(BasePersistent):
         """
         if index < 0 or index > self.size:
             raise ValueError("Invalid index")
+        self._mutex.acquire()
         self._create_new_state()
         self._history[self._last_state] = np.insert(self._history[self._last_state], index, value)
         self.size += 1
+        self._mutex.release()
 
     def remove(self, index: int) -> None:
         """Удаление элемента в новой версии массива по индексу.

@@ -55,6 +55,7 @@ class PersistentLinkedList(BasePersistent):
         :param data: Данные, которые нужно добавить в список.
         :return: None
         """
+        self._mutex.acquire()
         self._create_new_state()
         head, tail = self._history[self._last_state]
         new_node = Node(data)
@@ -66,6 +67,7 @@ class PersistentLinkedList(BasePersistent):
             tail = new_node
         self.size += 1
         self._history[self._last_state] = (head, tail)
+        self._mutex.release()
 
     def add_first(self, data: any) -> None:
         """
@@ -74,6 +76,7 @@ class PersistentLinkedList(BasePersistent):
         :param data: Данные, которые нужно добавить в начало списка.
         :return: None
         """
+        self._mutex.acquire()
         self._create_new_state()
         head, tail = self._history[self._last_state]
         new_node = Node(data, next_node=head)
@@ -84,6 +87,7 @@ class PersistentLinkedList(BasePersistent):
             tail = new_node
         self.size += 1
         self._history[self._last_state] = (head, tail)
+        self._mutex.release()
 
     def insert(self, index: int, data: any) -> None:
         """
@@ -94,6 +98,7 @@ class PersistentLinkedList(BasePersistent):
         :return: None
         :raises IndexError: Если индекс выходит за пределы списка.
         """
+        self._mutex.acquire()
         self._create_new_state()
         head, tail = self._history[self._last_state]
         current = head
@@ -113,6 +118,7 @@ class PersistentLinkedList(BasePersistent):
         else:
             raise IndexError("Index out of range")
         self._history[self._last_state] = (head, tail)
+        self._mutex.release()
 
     def pop(self, index: int) -> any:
         """
@@ -122,6 +128,7 @@ class PersistentLinkedList(BasePersistent):
         :return: Значение удаленного элемента.
         :raises IndexError: Если индекс выходит за пределы списка.
         """
+        self._mutex.acquire()
         head, tail = self._history[self._current_state]
         current = head
         count = 0
@@ -139,10 +146,12 @@ class PersistentLinkedList(BasePersistent):
                 self._create_new_state()
                 self.size -= 1
                 self._history[self._last_state] = (head, tail)
+                self._mutex.release()
                 return value
             count += 1
             current = current.next_node
         raise IndexError("Index out of range")
+        self._mutex.release()
 
     def remove(self, value: any) -> None:
         """
@@ -152,6 +161,7 @@ class PersistentLinkedList(BasePersistent):
         :return: None
         :raises ValueError: Если элемент не найден в списке.
         """
+        self._mutex.acquire()
         head, tail = self._history[self._current_state]
         current = head
         while current:
@@ -167,9 +177,11 @@ class PersistentLinkedList(BasePersistent):
                 self._create_new_state()
                 self.size -= 1
                 self._history[self._last_state] = (head, tail)
+                self._mutex.release()
                 return
             current = current.next_node
         raise ValueError(f"Value {value} not found in the list")
+        self._mutex.release()
 
     def get(self, version: int = None, index: int = None) -> any:
         """
@@ -203,9 +215,11 @@ class PersistentLinkedList(BasePersistent):
 
         :return: None
         """
+        self._mutex.acquire()
         self._create_new_state()
         self.size = 0
         self._history[self._last_state] = (None, None)
+        self._mutex.release()
 
     def __getitem__(self, index: int) -> any:
         """
@@ -233,6 +247,7 @@ class PersistentLinkedList(BasePersistent):
         :param value: Новое значение для обновляемого элемента.
         :raises IndexError: Если индекс выходит за пределы списка.
         """
+        self._mutex.acquire()
         self._create_new_state()
         head, tail = self._history[self._last_state]
         current = head
@@ -246,6 +261,7 @@ class PersistentLinkedList(BasePersistent):
         else:
             raise IndexError("Index out of range")
         self._history[self._last_state] = (head, tail)
+        self._mutex.release()
 
     def get_size(self) -> int:
         """

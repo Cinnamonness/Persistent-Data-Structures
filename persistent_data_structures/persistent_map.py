@@ -1,4 +1,5 @@
 from persistent_data_structures.base_persistent import BasePersistent
+from time import sleep
 
 
 class PersistentMap(BasePersistent):
@@ -6,14 +7,6 @@ class PersistentMap(BasePersistent):
 
     Представляет собой словарь, который сохраняет историю изменений.
     """
-    def __init__(self, initial_state: dict = {}) -> None:
-        """Инициализирует персистентный ассоциативный массив.
-
-        :param initial_state: Начальное состояние персистентной структуры данных.
-        """
-        super().__init__(initial_state)
-        self._locked_key = set()
-        self._global_lock = False
 
     def __setitem__(self, key: any, value: any) -> None:
         """Обновляет или создает элемент по указанному ключу в новой версии.
@@ -21,12 +14,11 @@ class PersistentMap(BasePersistent):
         :param key: Ключ
         :param value: Значение
         """
-        if key in self._locked_key or self._global_lock:
-            raise KeyError(f'Key "{key}" is locked')
-        self._locked_key.add(key)
+        self._mutex.acquire()
         self._create_new_state()
         self._history[self._last_state][key] = value
-        self._locked_key.remove(key)
+        sleep(1.0)
+        self._mutex.release()
 
     def __getitem__(self, key: any) -> any:
         """Возвращает элемент текущей версии по указанному ключу.
@@ -58,12 +50,10 @@ class PersistentMap(BasePersistent):
         """
         if key not in self._history[self._current_state]:
             raise KeyError(f'Key "{key}" does not exist')
-        if key in self._locked_key or self._global_lock:
-            raise KeyError(f'Key "{key}" is locked')
-        self._locked_key.add(key)
+        self._mutex.acquire()
         self._create_new_state()
         popped_item = self._history[self._last_state].pop(key)
-        self._locked_key.remove(key)
+        self._mutex.release()
         return popped_item
 
     def remove(self, key: any) -> None:
@@ -75,9 +65,7 @@ class PersistentMap(BasePersistent):
 
     def clear(self) -> None:
         """Очищает ассоциативный массив в новой версии."""
-        if self._global_lock or len(self._locked_key) > 0:
-            raise KeyError('Can not access the all map')
-        self._global_lock = True
+        self._mutex.acquire()
         self._create_new_state()
         self._history[self._current_state] = {}
-        self._global_lock = False
+        self._mutex.release()
