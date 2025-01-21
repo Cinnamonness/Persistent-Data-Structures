@@ -15,6 +15,7 @@ class BasePersistent:
         self._history = {0: initial_state}
         self._current_state = 0
         self._last_state = 0
+        self._lock = False
 
     def get_version(self, version):
         """Возвращает состояние персистентной структуры данных на указанной версии.
@@ -35,17 +36,29 @@ class BasePersistent:
         """
         if version < 0 or version >= len(self._history):
             raise ValueError(f'Version "{version}" does not exist')
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         self._current_state = version
+        self._lock = False
 
     def undo(self):
         """Отменяет последнее изменение."""
         if self._current_state > 0:
+            if self._lock:
+                raise KeyError('Structure is locked')
+            self._lock = True
             self._current_state -= 1
+            self._lock = False
 
     def redo(self):
         """Отменяет отмененное изменение."""
         if self._current_state < self._last_state:
+            if self._lock:
+                raise KeyError('Structure is locked')
+            self._lock = True
             self._current_state += 1
+            self._lock = False
 
     def _create_new_state(self) -> None:
         """Создает новую версию."""

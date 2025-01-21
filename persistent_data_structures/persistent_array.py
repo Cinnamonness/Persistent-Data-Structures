@@ -53,9 +53,13 @@ class PersistentArray(BasePersistent):
 
         :param value (int): Значение нового элемента, который добавляется в массив.
         """
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         self._create_new_state()
         self._history[self._last_state] = np.append(self._history[self._last_state], value)
         self.size += 1
+        self._lock = False
 
     def pop(self, index: int) -> any:
         """Удаление элемента в новой версии массива и возвращение его значения.
@@ -66,10 +70,14 @@ class PersistentArray(BasePersistent):
         """
         if index < 0 or index >= self.size:
             raise ValueError("Invalid index")
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         removed_element = self._history[self._current_state][index]
         self._create_new_state()
         self._history[self._last_state] = np.delete(self._history[self._last_state], index)
         self.size -= 1
+        self._lock = False
         return removed_element
 
     def __setitem__(self, index: int, value: any) -> None:
@@ -83,8 +91,12 @@ class PersistentArray(BasePersistent):
         """
         if index < 0 or index >= self.size:
             raise ValueError("Invalid index")
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         self._create_new_state()
         self._history[self._last_state][index] = value
+        self._lock = False
 
     def insert(self, index: int, value: any) -> None:
         """Вставка нового элемента в массив в указанную позицию в новой версии.
@@ -97,9 +109,13 @@ class PersistentArray(BasePersistent):
         """
         if index < 0 or index > self.size:
             raise ValueError("Invalid index")
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         self._create_new_state()
         self._history[self._last_state] = np.insert(self._history[self._last_state], index, value)
         self.size += 1
+        self._lock = False
 
     def remove(self, index: int) -> None:
         """Удаление элемента в новой версии массива по индексу.

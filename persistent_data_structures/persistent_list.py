@@ -55,6 +55,9 @@ class PersistentLinkedList(BasePersistent):
         :param data: Данные, которые нужно добавить в список.
         :return: None
         """
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         self._create_new_state()
         head, tail = self._history[self._last_state]
         new_node = Node(data)
@@ -66,6 +69,7 @@ class PersistentLinkedList(BasePersistent):
             tail = new_node
         self.size += 1
         self._history[self._last_state] = (head, tail)
+        self._lock = False
 
     def add_first(self, data: any) -> None:
         """
@@ -74,6 +78,9 @@ class PersistentLinkedList(BasePersistent):
         :param data: Данные, которые нужно добавить в начало списка.
         :return: None
         """
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         self._create_new_state()
         head, tail = self._history[self._last_state]
         new_node = Node(data, next_node=head)
@@ -84,6 +91,7 @@ class PersistentLinkedList(BasePersistent):
             tail = new_node
         self.size += 1
         self._history[self._last_state] = (head, tail)
+        self._lock = False
 
     def insert(self, index: int, data: any) -> None:
         """
@@ -94,6 +102,9 @@ class PersistentLinkedList(BasePersistent):
         :return: None
         :raises IndexError: Если индекс выходит за пределы списка.
         """
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         self._create_new_state()
         head, tail = self._history[self._last_state]
         current = head
@@ -111,8 +122,10 @@ class PersistentLinkedList(BasePersistent):
             count += 1
             current = current.next_node
         else:
+            self._lock = False
             raise IndexError("Index out of range")
         self._history[self._last_state] = (head, tail)
+        self._lock = False
 
     def pop(self, index: int) -> any:
         """
@@ -122,6 +135,9 @@ class PersistentLinkedList(BasePersistent):
         :return: Значение удаленного элемента.
         :raises IndexError: Если индекс выходит за пределы списка.
         """
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         head, tail = self._history[self._current_state]
         current = head
         count = 0
@@ -139,9 +155,11 @@ class PersistentLinkedList(BasePersistent):
                 self._create_new_state()
                 self.size -= 1
                 self._history[self._last_state] = (head, tail)
+                self._lock = False
                 return value
             count += 1
             current = current.next_node
+        self._lock = False
         raise IndexError("Index out of range")
 
     def remove(self, value: any) -> None:
@@ -152,6 +170,9 @@ class PersistentLinkedList(BasePersistent):
         :return: None
         :raises ValueError: Если элемент не найден в списке.
         """
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         head, tail = self._history[self._current_state]
         current = head
         while current:
@@ -167,8 +188,10 @@ class PersistentLinkedList(BasePersistent):
                 self._create_new_state()
                 self.size -= 1
                 self._history[self._last_state] = (head, tail)
+                self._lock = False
                 return
             current = current.next_node
+        self._lock = False
         raise ValueError(f"Value {value} not found in the list")
 
     def get(self, version: int = None, index: int = None) -> any:
@@ -203,9 +226,13 @@ class PersistentLinkedList(BasePersistent):
 
         :return: None
         """
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         self._create_new_state()
         self.size = 0
         self._history[self._last_state] = (None, None)
+        self._lock = False
 
     def __getitem__(self, index: int) -> any:
         """
@@ -233,6 +260,9 @@ class PersistentLinkedList(BasePersistent):
         :param value: Новое значение для обновляемого элемента.
         :raises IndexError: Если индекс выходит за пределы списка.
         """
+        if self._lock:
+            raise KeyError('Structure is locked')
+        self._lock = True
         self._create_new_state()
         head, tail = self._history[self._last_state]
         current = head
@@ -245,7 +275,9 @@ class PersistentLinkedList(BasePersistent):
             current = current.next_node
         else:
             raise IndexError("Index out of range")
+            self._lock = False
         self._history[self._last_state] = (head, tail)
+        self._lock = False
 
     def get_size(self) -> int:
         """
