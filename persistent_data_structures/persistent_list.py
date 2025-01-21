@@ -1,4 +1,6 @@
-from persistent_data_structures.base_persistent import BasePersistent
+from copy import deepcopy
+
+from base_persistent import BasePersistent
 
 
 class Node:
@@ -267,6 +269,20 @@ class PersistentLinkedList(BasePersistent):
         """
         return self.size
 
+    def calc_size(self) -> int:
+        """
+        Расчет текущего размера списка.
+
+        :return: Количество элементов в текущей версии списка.
+        """
+        size = 0
+        head, tail = self._history[self._current_state]
+        current = head
+        while current:
+            size += 1
+            current = current.next_node
+        return size
+
     def check_is_empty(self) -> bool:
         """
         Проверяет, пуст ли список.
@@ -275,3 +291,56 @@ class PersistentLinkedList(BasePersistent):
         """
         head, tail = self._history[self._current_state]
         return head is None
+    
+    def update_version(self, version) -> None:
+        """Обновляет текущую версию персистентной структуры данных до указанной.
+
+        :param version: Номер версии.
+        :raises ValueError: Если указанная версия не существует.
+        """
+        if version < 0 or version >= len(self._history):
+            raise ValueError(f'Version "{version}" does not exist')
+        self._current_state = version
+        self.size = self.calc_size()
+
+    def undo(self) -> None:
+        """Отменяет последнее изменение."""
+        if self._container is not None:
+            raise NotImplementedError(f'Cannot undo inside container "{self._container}"')
+        if self._current_state == 0:
+            raise ValueError("No actions to undo")
+        if self._current_state > 0:
+            self._current_state -= 1
+            self.size = self.calc_size()
+
+    def redo(self) -> None:
+        """Повторяет последнее отмененное изменение.
+
+        :raises ValueError: Если нет операций."""
+        if self._container is not None:
+            raise NotImplementedError(f'Cannot redo inside container "{self._container}"')
+        if self._current_state >= self._last_state:
+            raise ValueError("No operations to redo")
+        self._current_state += 1
+        self.size = self.calc_size()
+
+    def _create_new_state(self) -> None:
+        """Создает новую версию."""
+        # Персистентные структуры могут быть вложенными,
+        # поэтому нужно сохранять историю изменений в родительской персистентной структуре
+        if self._container is not None:
+            # В текущей версии родительской структуры подменяем имеющуюся вложенную структуру
+            # на ее копию, таким образом изменения во вложенной структуре не будут отражаться на
+            # прощлых версиях родительской структуры
+            head, tail = self._container._history[self._container._current_state]
+            current = head
+            while current:
+                if current.value is self:
+                    current.value = deepcopy(self)
+                    break
+                current = current.next_node
+        self._last_state += 1
+        self._history[self._last_state] = deepcopy(self._history[self._current_state])
+        self._current_state = self._last_state
+        if self._container is not None:
+            self._container[self._location] = self
