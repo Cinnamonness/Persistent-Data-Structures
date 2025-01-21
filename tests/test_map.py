@@ -168,3 +168,37 @@ def test_remove_nested_structure(setup_persistent_map):
     persistent_map.remove("nested")
     with pytest.raises(KeyError):
         persistent_map["nested"]
+
+
+def test_cascade_undo_redo_nested():
+    """Тест 13. Проверка каскадного undo/redo с вложенными структурами"""
+    persistent_map = PersistentMap({
+        "level1": PersistentMap({
+            "level2": PersistentMap({
+                "level3": 42
+            })
+        })
+    })
+    persistent_map["level1"]["level2"]["level3"] = 100
+    assert persistent_map["level1"]["level2"]["level3"] == 100
+    persistent_map["level1"]["level2"].undo()
+    assert persistent_map["level1"]["level2"]["level3"] == 42
+    persistent_map["level1"]["level2"].redo()
+    assert persistent_map["level1"]["level2"]["level3"] == 100
+
+
+def test_triple_nested_undo_redo():
+    """Тест 14. Проверка undo/redo с тройной вложенностью"""
+    persistent_map = PersistentMap({
+        "level1": PersistentMap({
+            "level2": PersistentMap({
+                "level3": PersistentMap({"key": 333})
+            })
+        })
+    })
+    persistent_map["level1"]["level2"]["level3"]["key"] = 200
+    assert persistent_map["level1"]["level2"]["level3"]["key"] == 200
+    persistent_map["level1"]["level2"]["level3"].undo()
+    assert persistent_map["level1"]["level2"]["level3"]["key"] == 333
+    persistent_map["level1"]["level2"]["level3"].redo()
+    assert persistent_map["level1"]["level2"]["level3"]["key"] == 200

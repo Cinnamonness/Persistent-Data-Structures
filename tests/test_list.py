@@ -144,3 +144,42 @@ def test_deep_nested_persistence():
     assert inner_list.get(version=0, index=1) == 2
     assert middle_list.get(version=0, index=0).get(version=0, index=1) == 2
     assert outer_list.get(version=0, index=0).get(version=0, index=0).get(version=0, index=1) == 2
+
+
+def test_cascade_undo_redo():
+    """Тест 15. Проверка каскадную вложенность"""
+    list1 = PersistentLinkedList([1, 2, 3])
+    list2 = PersistentLinkedList([4, 5])
+    list3 = PersistentLinkedList([6, 7])
+    list1.add(list2)
+    list2.add(list3)
+    assert list1.get() == [list2]
+    list1.undo()
+    assert list1.get() == [1, 2, 3]
+    list1.redo()
+    assert list1.get() == [list2]
+
+
+def test_triple_nested_undo_redo():
+    """Тест 16. Проверка undo-redo с тройной вложенностью"""
+    list1 = PersistentLinkedList([1, 2, 3])
+    list2 = PersistentLinkedList([4, 5])
+    list3 = PersistentLinkedList([6, 7])
+    list1.add(list2)
+    list2.add(list3)
+    assert list1.get() == [list2]
+    assert list2.get() == [list3]
+    list3.add(8)
+    assert list3.get() == [6, 7, 8]
+    list1.undo()
+    assert list1.get() == [1, 2, 3]
+    list2.undo()
+    assert list2.get() == [4, 5]
+    list3.undo()
+    assert list3.get() == [6, 7]
+    list1.redo()
+    assert list1.get() == [list2]
+    list2.redo()
+    assert list2.get() == [list3]
+    list3.redo()
+    assert list3.get() == [6, 7, 8]

@@ -240,3 +240,42 @@ def test_remove_nested_array(persistent_array):
     assert persistent_array.get_size() == 5
     with pytest.raises(ValueError):
         persistent_array[5]
+
+
+def test_undo_redo_with_nested(persistent_array):
+    """Тест 28. Проверка функционала отмены и повторения изменений с вложенной структурой"""
+    nested_array = PersistentArray(size=3, default_value=1)
+    persistent_array.add(nested_array)
+    persistent_array[5][1] = 20
+    persistent_array.undo()
+    assert persistent_array[5][1] == 1
+    persistent_array.redo()
+    assert persistent_array[5][1] == 20
+
+
+def test_triple_nested_persistent_array(persistent_array):
+    """Тест 29. Проверка удаления вложенной структуры из массива (тройная вложенность)"""
+    nested_array_1 = PersistentArray(size=3, default_value=1)
+    nested_array_1[1] = 42
+    nested_array_2 = PersistentArray(size=2, default_value=5)
+    nested_array_2[0] = 99
+    nested_array_3 = PersistentArray(size=1, default_value=7)
+    nested_array_3[0] = 77
+    persistent_array.add(nested_array_1)
+    persistent_array.add(nested_array_2)
+    persistent_array.add(nested_array_3)
+    assert persistent_array.get_size() == 8
+    assert isinstance(persistent_array[5], PersistentArray)
+    assert isinstance(persistent_array[6], PersistentArray)
+    assert isinstance(persistent_array[7], PersistentArray)
+    removed_element = persistent_array.pop(7)
+    assert removed_element == nested_array_3
+    assert persistent_array.get_size() == 7
+    assert persistent_array[5][0] == 1
+    assert persistent_array[5][1] == 42
+    assert persistent_array[6][0] == 99
+    persistent_array.undo()
+    assert persistent_array.get_size() == 7
+    persistent_array[6] = 88
+    persistent_array.undo()
+    assert persistent_array[6][0] == 99
