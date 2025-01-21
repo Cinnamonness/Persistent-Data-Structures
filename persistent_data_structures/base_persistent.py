@@ -29,6 +29,22 @@ class BasePersistent:
             raise ValueError(f'Version "{version}" does not exist')
         return self._history[version]
 
+    def getcopy(self, version: int, key: any) -> any:
+        """Возвращает копию элемента с указанной версией и ключом/индексом.
+
+        :param version: Номер версии
+        :param key: Ключ/индекс
+        :return: Копия значения сответствующее указанному ключу или None,
+                 если ключ/индекс не существует.
+        :raises ValueError: Если версия не существует
+        :raises KeyError: Если ключ/индекс не существует
+        """
+        value = deepcopy(self.get(version, key))
+        if isinstance(value, BasePersistent):
+            value._container = None
+            value._location = None
+        return value
+
     def update_version(self, version):
         """Обновляет текущую версию персистентной структуры данных до указанной.
 
