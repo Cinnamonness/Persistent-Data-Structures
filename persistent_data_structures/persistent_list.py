@@ -291,7 +291,7 @@ class PersistentLinkedList(BasePersistent):
         """
         head, tail = self._history[self._current_state]
         return head is None
-    
+
     def update_version(self, version) -> None:
         """Обновляет текущую версию персистентной структуры данных до указанной.
 
