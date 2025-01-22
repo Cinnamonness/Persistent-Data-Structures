@@ -1,6 +1,7 @@
 import pytest
-
 from persistent_array import PersistentArray
+from transaction import transaction
+from threading import Thread
 
 
 # Тестирование методов класса PersistentArray
@@ -116,3 +117,65 @@ def test_invalid_version_update(persistent_array):
     persistent_array.add(2)
     with pytest.raises(ValueError):
         persistent_array.update_version(10)
+
+
+def test_transaction_success(persistent_array):
+    """Тест 14. Проверка успешного выполнения транзакции"""
+    def modify_array():
+        persistent_array[0] = 42
+    transaction(modify_array)
+    assert persistent_array[0] == 42
+
+
+def test_transaction_with_threads(persistent_array):
+    """Тест 15. Проверка выполнения транзакции с использованием потоков"""
+    def modify_array_in_thread():
+        persistent_array[1] = 99
+    thread1 = Thread(target=transaction, args=(modify_array_in_thread,))
+    thread2 = Thread(target=transaction, args=(modify_array_in_thread,))
+    thread1.start()
+    thread2.start()
+    thread1.join()
+    thread2.join()
+    assert persistent_array[1] == 99
+
+
+def test_transaction_state_consistency(persistent_array):
+    """Тест 16. Проверка консистентности состояния после транзакций"""
+    def modify_array_consistently():
+        persistent_array[2] = 88
+        persistent_array[3] = 77
+    transaction(modify_array_consistently)
+    assert persistent_array[2] == 88
+    assert persistent_array[3] == 77
+
+
+def test_mutex_locking(persistent_array):
+    """Тест 17. Проверка работы мьютекса"""
+    counter = 0
+
+    def modify_shared_resource():
+        nonlocal counter
+        for _ in range(100):
+            with persistent_array._mutex:
+                temp = counter
+                counter = temp + 1
+    threads = [Thread(target=modify_shared_resource) for _ in range(10)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert counter == 1000
+
+
+def test_nested_transactions(persistent_array):
+    """Тест 18. Проверка корректности работы вложенных транзакций"""
+    def modify_array_nested():
+        persistent_array[3] = 123
+
+        def inner_transaction():
+            persistent_array[4] = 456
+        transaction(inner_transaction)
+    transaction(modify_array_nested)
+    assert persistent_array[3] == 123
+    assert persistent_array[4] == 456
