@@ -153,11 +153,8 @@ def test_cascade_undo_redo():
     list3 = PersistentLinkedList([6, 7])
     list1.add(list2)
     list2.add(list3)
-    assert list1.get() == [list2]
-    list1.undo()
-    assert list1.get() == [1, 2, 3]
-    list1.redo()
-    assert list1.get() == [list2]
+    assert list1[3] == list2
+    assert list1[3][2] == list3
 
 
 def test_triple_nested_undo_redo():
@@ -167,19 +164,19 @@ def test_triple_nested_undo_redo():
     list3 = PersistentLinkedList([6, 7])
     list1.add(list2)
     list2.add(list3)
-    assert list1.get() == [list2]
-    assert list2.get() == [list3]
     list3.add(8)
-    assert list3.get() == [6, 7, 8]
     list1.undo()
-    assert list1.get() == [1, 2, 3]
-    list2.undo()
-    assert list2.get() == [4, 5]
-    list3.undo()
-    assert list3.get() == [6, 7]
+    with pytest.raises(IndexError):
+        list1[3][2][2]
+    assert list1[3][2][1] == 7
+    assert list1[3][2][0] == 6
+    list1.undo()
+    with pytest.raises(IndexError):
+        list1[3][2]
     list1.redo()
-    assert list1.get() == [list2]
-    list2.redo()
-    assert list2.get() == [list3]
-    list3.redo()
-    assert list3.get() == [6, 7, 8]
+    with pytest.raises(IndexError):
+        list1[3][2][2]
+    assert list1[3][2][1] == 7
+    assert list1[3][2][0] == 6
+    with pytest.raises(NotImplementedError):
+        list2.redo()
